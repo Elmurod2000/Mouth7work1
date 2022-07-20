@@ -6,10 +6,13 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.RecyclerView
 import by.kirich1409.viewbindingdelegate.viewBinding
 import com.example.Mouth7Work1.R
 import com.example.Mouth7Work1.databinding.ActivityMainBinding
 import com.example.Mouth7Work1.domain.model.ShopItem
+import com.example.Mouth7Work1.extentions.showToastShort
 import com.example.Mouth7Work1.presentation.shopItemAdapter.ShopItemAdapter
 
 class MainActivity : AppCompatActivity(R.layout.activity_main) {
@@ -35,6 +38,13 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     }
 
     private fun initListeners() {
+        adapter.onShopItemClickListener = {
+            viewModel.deleteShopItem(it)
+        }
+        adapter.onShopItemLongClickListener = {
+            viewModel.editShopItem(it)
+            showToastShort("Изменено состояние объекта ${it.enabled}")
+        }
         binding.fab.setOnClickListener {
             val intent = Intent(this@MainActivity, TaskActivity::class.java)
             launcher.launch(intent)
@@ -44,7 +54,7 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
     private fun initRecyclerView() {
         adapter = ShopItemAdapter()
         binding.taskRecycler.adapter = adapter
-
+        setUpSwipeListener()
     }
 
     private fun initViewModel() {
@@ -55,13 +65,36 @@ class MainActivity : AppCompatActivity(R.layout.activity_main) {
         launcher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
             if (it.resultCode == RESULT_OK) {
                 val userText = it.data?.getStringExtra(USER_KEY)
-                val userCount = it.data?.getIntExtra(USER_KEY_COUNT, 1)
-                if (userText != null && userCount != null) {
-                    viewModel.addShopItem(ShopItem(userText, userCount, enabled = false))
+                val userText2 = it.data?.getStringExtra(USER_KEY_COUNT)
+                if (userText != null ) {
+                    if (userText2 != null) {
+                        viewModel.addShopItem(ShopItem(userText, userText2.toInt(), enabled = false))
+                    }
                 }
             }
         }
     }
+
+    private fun setUpSwipeListener() {
+        val callback = object :
+            ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean {
+                return false
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val item = adapter.currentList[viewHolder.absoluteAdapterPosition]
+                viewModel.deleteShopItem(item)
+            }
+        }
+        val itemTouchHelper = ItemTouchHelper(callback)
+        itemTouchHelper.attachToRecyclerView(binding.taskRecycler)
+    }
+
 
     companion object {
         const val USER_KEY = "product"

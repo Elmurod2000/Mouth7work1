@@ -4,7 +4,7 @@ import com.example.Mouth7Work1.domain.model.ShopItem
 import com.example.Mouth7Work1.domain.repository.ShopListRepository
 
 class EditShopItemUseCase(private val shopEditRepository: ShopListRepository) {
-    fun editShopItem(shopItem: ShopItem) {
+    suspend fun editShopItem(shopItem: ShopItem) {
         shopEditRepository.editShopItem(shopItem)
     }
 }
